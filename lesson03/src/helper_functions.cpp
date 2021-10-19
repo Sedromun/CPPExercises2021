@@ -72,9 +72,71 @@ cv::Mat addBackgroundInsteadOfBlackPixels(cv::Mat object, cv::Mat background) {
 }
 
 cv::Mat addBackgroundInsteadOfBlackPixelsLargeBackground(cv::Mat object, cv::Mat largeBackground) {
-    // теперь вам гарантируется что largeBackground гораздо больше - добавьте проверок этого инварианта (rassert-ов)
+    rassert(largeBackground.cols == 1274 && largeBackground.rows == 591, 1111222223333)
+    rassert(object.cols == 101 && object.rows == 101, 333333222221111)
+    for(int i = 0; i < 101; i++) //587 - 688
+    {
+        for(int j = 0; j < 101; j++)//246-347
+        {
+            cv::Vec3b color = object.at<cv::Vec3b>(i, j);
+            if(color[0] > 5 || color[1] > 5 || color[2] > 5){
 
-    // TODO реализуйте функцию так, чтобы нарисовался объект ровно по центру на данном фоне, при этом черные пиксели объекта не должны быть нарисованы
+                largeBackground.at<cv::Vec3b>(i+246, j+587) = cv::Vec3b(color[0], color[1], color[2]);
+            }
+        }
+    }
 
     return largeBackground;
+}
+
+cv::Mat alotOfUnicornsOnTheBackground(cv::Mat object, cv::Mat largeBackground, int N) {
+    rassert(largeBackground.cols == 1274 && largeBackground.rows == 591, 1111222223333)
+    rassert(object.cols == 101 && object.rows == 101, 333333222221111)
+    for(int s = 0; s < N; s++) {
+        int row = rand() % 490;
+        int col = rand() % 1173;
+        for (int i = 0; i < 101; i++) {
+            for (int j = 0; j < 101; j++) {
+                cv::Vec3b color = object.at<cv::Vec3b>(i, j);
+                if (color[0] > 5 || color[1] > 5 || color[2] > 5) {
+                    largeBackground.at<cv::Vec3b>(i + row, j + col) = cv::Vec3b(color[0], color[1], color[2]);
+                }
+            }
+        }
+    }
+    return largeBackground;
+}
+
+cv::Mat BigUnicornOnTheCastle(cv::Mat object, cv::Mat largeBackground) {
+    for(int i = 0; i < 1274; i++){
+        for(int j = 0; j < 591; j++){
+            int x = (i*101)/1274;
+            int y = (j*101)/591;
+            cv::Vec3b color = object.at<cv::Vec3b>(y, x);
+            if (color[0] > 5 || color[1] > 5 || color[2] > 5) {
+                largeBackground.at<cv::Vec3b>(j, i) = cv::Vec3b(color[0], color[1], color[2]);
+            }
+        }
+    }
+
+
+
+    return largeBackground;
+}
+
+
+cv::Mat shizaShiza(cv::Mat object) {
+    int c1 = rand() % 255;
+    int c2 = rand() % 255;
+    int c3 = rand() % 255;
+    for (int i = 0; i < 101; i++) {
+        for (int j = 0; j < 101; j++) {
+            cv::Vec3b color = object.at<cv::Vec3b>(i, j);
+            if (color[0] < 5 && color[1] < 5 && color[2] < 5) {
+                object.at<cv::Vec3b>(i, j) = cv::Vec3b(c1, c2, c3);
+            }
+
+        }
+    }
+    return object;
 }
