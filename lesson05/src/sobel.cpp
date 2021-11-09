@@ -49,6 +49,7 @@ cv::Mat sobelDXY(cv::Mat img) {
     // производную неприятно брать по трем каналам (по трем BGR-цветам),
     // поэтому переданная картинка должна быть черно-белой (оттенки серого)
     // удостоверимся в этом (32-битное вещественное число: 32F + всего 1 канал (channel): C1):
+    img = convertBGRToGray(img);
     rassert(img.type() == CV_32FC1, 23781792319049);
 
     // реализуйте оператор Собеля - заполните dxy
@@ -69,8 +70,8 @@ cv::Mat sobelDXY(cv::Mat img) {
     };
 
     // TODO доделайте этот код (в т.ч. производную по оси ty), в нем мы пробегаем по всем пикселям (j,i)
-    for (int j = 1; j < height; ++j) {
-        for (int i = 1; i < width; ++i) {
+    for (int j = 1; j < height-1; ++j) {
+        for (int i = 1; i < width-1; ++i) {
             float dxSum = 0.0f; // суда будем накапливать производную по оси x
             float dySum = 0.0f;
             // затем пробегаем по окрестности 3x3 вокруг нашего центрального пикселя (j,i)
@@ -96,9 +97,8 @@ cv::Mat convertDXYToDX(cv::Mat img) {
     int height = img.rows;
     cv::Mat dxImg(height, width, CV_32FC1); // создаем одноканальную картинку состоящую из 32-битных вещественных чисел
     for (int j = 0; j < height; ++j) {
-        for (int i = 0; i < width; ++i) {
+        for (int i = 0; i < width-1; ++i) {
             cv::Vec2f dxy = img.at<cv::Vec2f>(j, i);
-
             float x = std::abs(dxy[0]); // взяли абсолютное значение производной по оси x
 
             dxImg.at<float>(j, i) = x;
@@ -117,7 +117,7 @@ cv::Mat convertDXYToDY(cv::Mat img) {
         for (int i = 0; i < width; ++i) {
             cv::Vec2f dxy = img.at<cv::Vec2f>(j, i);
 
-            float y = std::abs(dxy[1]); // взяли абсолютное значение производной по оси y
+            float y = std::abs(dxy[0]); // взяли абсолютное значение производной по оси y
 
             dyImg.at<float>(j, i) = y;
         }
@@ -138,7 +138,7 @@ cv::Mat convertDXYToGradientLength(cv::Mat img) {
         for (int i = 0; i < width; ++i) {
             cv::Vec2f dxy = img.at<cv::Vec2f>(j, i);
 
-            float grad = std::sqrt(dxy[0]*dxy[0] + dxy[1]*dxy[1]); // взяли абсолютное значение производной по оси y
+            float grad = std::sqrt(dxy[0]*dxy[0] + dxy[0]*dxy[0]); // взяли абсолютное значение производной по оси y
 
             gradImg.at<float>(j, i) = grad;
         }
