@@ -66,14 +66,19 @@ cv::Mat sobelDXY(cv::Mat img) {
     int dySobelKoef[3][3] = {
             {-1, -2, -1},
             {0, 0, 0},
-            {-1, -2, -1},
+            {1, 2, 1},
     };
 
     // TODO доделайте этот код (в т.ч. производную по оси ty), в нем мы пробегаем по всем пикселям (j,i)
-    for (int j = 1; j < height-1; ++j) {
-        for (int i = 1; i < width-1; ++i) {
+    for (int j = 0; j < height; ++j) {
+        for (int i = 0; i < width; ++i) {
             float dxSum = 0.0f; // суда будем накапливать производную по оси x
             float dySum = 0.0f;
+            if(i == 0 || i == width - 1 || j == 0 || j == height - 1)
+            {
+                dxyImg.at<cv::Vec2f>(j, i) = cv::Vec2f(dxSum, dySum);
+                continue;
+            }
             // затем пробегаем по окрестности 3x3 вокруг нашего центрального пикселя (j,i)
             for (int dj = -1; dj <= 1; ++dj) {
                 for (int di = -1; di <= 1; ++di) {
@@ -117,7 +122,7 @@ cv::Mat convertDXYToDY(cv::Mat img) {
         for (int i = 0; i < width; ++i) {
             cv::Vec2f dxy = img.at<cv::Vec2f>(j, i);
 
-            float y = std::abs(dxy[0]); // взяли абсолютное значение производной по оси y
+            float y = std::abs(dxy[1]); // взяли абсолютное значение производной по оси y
 
             dyImg.at<float>(j, i) = y;
         }
@@ -138,7 +143,7 @@ cv::Mat convertDXYToGradientLength(cv::Mat img) {
         for (int i = 0; i < width; ++i) {
             cv::Vec2f dxy = img.at<cv::Vec2f>(j, i);
 
-            float grad = std::sqrt(dxy[0]*dxy[0] + dxy[0]*dxy[0]); // взяли абсолютное значение производной по оси y
+            float grad = std::abs(std::sqrt(dxy[1]*dxy[1] + dxy[0]*dxy[0])); // взяли абсолютное значение производной по оси y
 
             gradImg.at<float>(j, i) = grad;
         }

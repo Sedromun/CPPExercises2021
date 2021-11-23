@@ -8,7 +8,7 @@
 
 
 void test(std::string name) {
-    std::string full_path = "H:\\CLionProjects\\CPPExercises2021\\lesson05\\data\\" + name + ".jpg";
+    std::string full_path = "C:\\Users\\vanar\\CLionProjects\\CPPExercises2021\\lesson05\\data\\" + name + ".jpg";
     cv::Mat img = cv::imread(full_path);
     rassert(!img.empty(), 238982391080010);
     cv::cvtColor(img, img, cv::COLOR_BGR2GRAY); // преобразуем в оттенки серого
@@ -21,16 +21,16 @@ void test(std::string name) {
     rassert(!grad_y.empty(), 234892748239070018);
 
     // сохраняем оба результата в картинку на диск, чтобы проверить что результат выглядит разумно
-    cv::imwrite("H:\\CLionProjects\\CPPExercises2021\\lesson07\\resultsData\\" + name + "_1_sobel_x.png", grad_x);
-    cv::imwrite("H:\\CLionProjects\\CPPExercises2021\\lesson07\\resultsData\\" + name + "_2_sobel_y.png", grad_y);
+    cv::imwrite("C:\\Users\\vanar\\CLionProjects\\CPPExercises2021\\lesson07\\resultsData\\" + name + "_1_sobel_x.png", grad_x);
+    cv::imwrite("C:\\Users\\vanar\\CLionProjects\\CPPExercises2021\\lesson07\\resultsData\\" + name + "_2_sobel_y.png", grad_y);
 
     // замечаем что мы ведь забыли взять абсолютное значение градиента!
     // TODO посмотрите на картинки на диске, какая из картинок это явно показывает?
     // давайте это исправим:
     grad_x = cv::abs(grad_x);
     grad_y = cv::abs(grad_y);
-    cv::imwrite("H:\\CLionProjects\\CPPExercises2021\\lesson07\\resultsData\\" + name + "_3_sobel_x.png", grad_x);
-    cv::imwrite("H:\\CLionProjects\\CPPExercises2021\\lesson07\\resultsData\\" + name + "_4_sobel_y.png", grad_y);
+    cv::imwrite("C:\\Users\\vanar\\CLionProjects\\CPPExercises2021\\lesson07\\resultsData\\" + name + "_3_sobel_x.png", grad_x);
+    cv::imwrite("C:\\Users\\vanar\\CLionProjects\\CPPExercises2021\\lesson07\\resultsData\\" + name + "_4_sobel_y.png", grad_y);
     // TODO посмотрите на картинки и проверьте поправилось ли?
 
     cv::Mat sobel_strength(img.rows, img.cols, CV_32FC1, 0.0f);
@@ -45,27 +45,27 @@ void test(std::string name) {
             sobel_strength.at<float>(j, i) = gradient_strength;
         }
     }
-    cv::imwrite("H:\\CLionProjects\\CPPExercises2021\\lesson07\\resultsData\\" + name + "_5_sobel_strength.png", sobel_strength);
+    cv::imwrite("C:\\Users\\vanar\\CLionProjects\\CPPExercises2021\\lesson07\\resultsData\\" + name + "_5_sobel_strength.png", sobel_strength);
 
     cv::Mat hough = buildHough(sobel_strength); // TODO теперь зайдите внутрь этой функции и реализуйте построение пространства Хафа
 
-    cv::imwrite("H:\\CLionProjects\\CPPExercises2021\\lesson07\\resultsData\\" + name + "_6_hough.png", hough);
+    cv::imwrite("C:\\Users\\vanar\\CLionProjects\\CPPExercises2021\\lesson07\\resultsData\\" + name + "_6_hough.png", hough);
     // обратите внимание что почти все пространство - яркое белое или черное, это происходит потому что яркость сильно больше чем 255
 
     // TODO поправьте это - найдите максимальную яркость (max_accumulated) среди всей матрицы hough и после этого отнормируйте всю картинку:
-    // float max_accumulated = 0.0f;
-    // for () {
-    //     for () {
-    //         ...
-    //     }
-    // }
+     float max_accumulated = 0.0f;
+     for (int j = 0; j < hough.rows; j++) {
+         for (int i = 0; i < hough.cols; i++) {
+             max_accumulated = std::max(max_accumulated, hough.at<float>(j, i));
+         }
+     }
     // TODO замените каждый пиксель с яркости X на яркость X*255/max_accumulated (т.е. уменьшите диапазон значений):
-    // for () {
-    //     for () {
-    //         ...
-    //     }
-    // }
-    // cv::imwrite("lesson07/resultsData/" + name + "_7_hough_normalized.png", hough*255.0f/max_accumulated);
+    for (int j = 0; j < hough.rows; j++) {
+        for (int i = 0; i < hough.cols; i++) {
+            hough.at<float>(j, i) = hough.at<float>(j, i)*255/max_accumulated;
+        }
+    }
+     cv::imwrite("C:\\Users\\vanar\\CLionProjects\\CPPExercises2021\\lesson07\\resultsData\\" + name + "_7_hough_normalized.png", hough);
 }
 
 
@@ -74,34 +74,34 @@ int main() {
         // TODO посмотрите на результат (аккумулятор-пространство Хафа) на всех этих картинках (раскомментируя их одну за другой)
         // TODO подумайте и напишите здесь оветы на вопросы:
         test("line01");
-        // 1) Какие координаты примерно должны бы быть у самой яркой точки в картинке line01_7_hough_normalized.png?
-        // ответ:
+//         1) Какие координаты примерно должны бы быть у самой яркой точки в картинке line01_7_hough_normalized.png?
+//         ответ: r = 73, theta = 92
 
 //        test("line02");
-//        // 2) Какие координаты примерно должны бы быть у самой яркой точки в картинке line02_7_hough_normalized.png?
-//        // ответ:
-//
+        // 2) Какие координаты примерно должны бы быть у самой яркой точки в картинке line02_7_hough_normalized.png?
+        // ответ: r = 107, theta = 3
+
 //        test("line11");
-//        // 3) Чем должно бы принципиально отличаться пространство Хафа относительно случая line01?
-//        // ответ:
-//
+        // 3) Чем должно бы принципиально отличаться пространство Хафа относительно случая line01?
+        // ответ: другие маленькие линии должны быть немного яркие
+
 //        test("line12");
-//        // 4) Зная правильный ответ из предыдущего случая line11 - как найти правильнйы ответ для line12?
-//        // ответ:
-//
+        // 4) Зная правильный ответ из предыдущего случая line11 - как найти правильнйы ответ для line12?
+        // ответ:
+
 //        test("line21_water_horizont");
-//        // 5) Сколько должно бы быть ярких точек?
-//        // ответ:
-//
+        // 5) Сколько должно бы быть ярких точек?
+        // ответ: 1
+
 //        test("multiline1_paper_on_table");
-//        // 6) Сколько должно бы быть ярких точек? Сколько вы насчитали в пространстве Хафа?
-//        // ответ:
-//
+        // 6) Сколько должно бы быть ярких точек? Сколько вы насчитали в пространстве Хафа?
+        // ответ:8, 4
+
 //        test("multiline2_paper_on_table");
-//        // 7) Сколько должно бы быть ярких точек? Сколько вы насчитали в пространстве Хафа? Есть ли интересные наблюдения относительно предыдущего случая?
-//        // ответ:
-//
-//        test("valve");
+        // 7) Сколько должно бы быть ярких точек? Сколько вы насчитали в пространстве Хафа? Есть ли интересные наблюдения относительно предыдущего случая?
+        // ответ:
+
+        test("valve");
 //        // 8) Какие-нибудь мысли?
 
         return 0;
