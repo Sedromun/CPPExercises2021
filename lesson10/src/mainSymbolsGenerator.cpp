@@ -8,7 +8,7 @@
 
 
 #define NSAMPLES_PER_LETTER 5
-#define LETTER_DIR_PATH std::string("lesson10/generatedData/letters")
+std::string LETTER_DIR_PATH = "C:\\Users\\vanar\\CLionProjects\\CPPExercises2021\\lesson10\\generatedData\\letters\\";
 
 
 int randFont() {
@@ -86,7 +86,7 @@ void generateAllLetters() {
     for (char letter = 'a'; letter <= 'z'; ++letter) {
 
         // Создаем папку для текущей буквы:
-        std::string letterDir = LETTER_DIR_PATH + "/" + letter;
+        std::string letterDir = LETTER_DIR_PATH + letter;
         std::filesystem::create_directory(letterDir);
 
         for (int sample = 1; sample <= NSAMPLES_PER_LETTER; ++sample) {
@@ -95,7 +95,7 @@ void generateAllLetters() {
 
             cv::blur(img, img, cv::Size(3, 3));
 
-            std::string letterSamplePath = letterDir + "/" + std::to_string(sample) + ".png";
+            std::string letterSamplePath = letterDir + std::to_string(sample) + ".png";
             cv::imwrite(letterSamplePath, img);
         }
     }
@@ -113,17 +113,31 @@ void experiment1() {
 
     std::cout << "________Experiment 1________" << std::endl;
     for (char letter = 'a'; letter <= 'z'; ++letter) {
-        std::string letterDir = LETTER_DIR_PATH + "/" + letter;
+        std::string letterDir = LETTER_DIR_PATH + letter;
 
+        std::vector<double> dist;
         for (int sampleA = 1; sampleA <= NSAMPLES_PER_LETTER; ++sampleA) {
             for (int sampleB = sampleA + 1; sampleB <= NSAMPLES_PER_LETTER; ++sampleB) {
-                cv::Mat a = cv::imread(letterDir + "/" + std::to_string(sampleA) + ".png");
-                cv::Mat b = cv::imread(letterDir + "/" + std::to_string(sampleB) + ".png");
+                cv::Mat a = cv::imread(letterDir + std::to_string(sampleA) + ".png");
+                cv::Mat b = cv::imread(letterDir + std::to_string(sampleB) + ".png");
                 HoG hogA = buildHoG(a);
+                HoG hogB = buildHoG(b);
+
+                dist.push_back(distance(hogA, hogB));
+
+
                 // TODO
             }
         }
-//        std::cout << "Letter " << letter << ": max=" << distMax << ", avg=" << (distSum / distN) << std::endl;
+        double distMax = 0;
+        double distSum = 0;
+
+        for(int i = 0; i < 10; i++)
+        {
+            distMax = std::max(distMax, dist[i]);
+            distSum += dist[i];
+        }
+        std::cout << "Letter " << letter << ": max=" << distMax << ", avg=" << (distSum / 10) << std::endl;
     }
 }
 
@@ -138,15 +152,35 @@ void experiment2() {
 
     std::cout << "________Experiment 2________" << std::endl;
     for (char letterA = 'a'; letterA <= 'z'; ++letterA) {
-        std::string letterDirA = LETTER_DIR_PATH + "/" + letterA;
+        std::string letterDirA = LETTER_DIR_PATH + letterA + "1";
+        double distMax = 0;
+        char letterMax = ' ';
+        char letterMin = ' ';
+        double distMin = 1e9 + 7;
 
         for (char letterB = 'a'; letterB <= 'z'; ++letterB) {
             if (letterA == letterB) continue;
+            std::string letterDirB = LETTER_DIR_PATH + letterB + "1";
 
+            cv::Mat a = cv::imread(letterDirA + ".png");
+            cv::Mat b = cv::imread(letterDirB + ".png");
+
+            double curDist = distance(buildHoG(a), buildHoG(b));
+
+            if(curDist < distMin)
+            {
+                distMin = curDist;
+                letterMin = letterB;
+            }
+            if(curDist > distMax)
+            {
+                distMax = curDist;
+                letterMax = letterB;
+            }
             // TODO
         }
 
-//        std::cout << "Letter " << letterA << ": max=" << letterMax << "/" << distMax << ", min=" << letterMin << "/" << distMin << std::endl;
+        std::cout << "Letter " << letterA << ": max=" << letterMax << "/" << distMax << ", min=" << letterMin << "/" << distMin << std::endl;
     }
 }
 

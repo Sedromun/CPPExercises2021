@@ -21,7 +21,9 @@ HoG buildHoG(cv::Mat grad_x, cv::Mat grad_y) {
 
     // TODO
     // 1) увеличьте размер вектора hog до NBINS (ведь внутри это просто обычный вектор вещественных чисел)
+
     // 2) заполните его нулями
+    hog.assign(NBINS, 0);
     // 3) пробегите по всем пикселям входной картинки и посмотрите на каждый градиент
     // (определенный двумя числами: dx проекцией на ось x в grad_x, dy проекцией на ось y в grad_y)
     // 4) определите его силу (корень из суммы квадратов), определите его угол направления:
@@ -33,18 +35,26 @@ HoG buildHoG(cv::Mat grad_x, cv::Mat grad_y) {
             float dx = grad_x.at<float>(j, i);
             float dy = grad_y.at<float>(j, i);
             float strength = sqrt(dx * dx + dy * dy);
+            float angle = atan2(dy, dx);
+            if(angle < 0)
+                angle += 2*M_PI;
 
             if (strength < 10) // пропускайте слабые градиенты, это нужно чтобы игнорировать артефакты сжатия в jpeg (например в line01.jpg пиксели не идеально белые/черные, есть небольшие отклонения)
                 continue;
 
             // TODO рассчитайте в какую корзину нужно внести голос
-            int bin = -1;
+            int bin = floor((angle*NBINS)/(2*M_PI));
 
             rassert(bin >= 0, 3842934728039);
             rassert(bin < NBINS, 34729357289040);
             hog[bin] += strength;
         }
     }
+    double sumbin = 0;
+    for(int bin = 0; bin < NBINS; bin++)
+        sumbin += hog[bin];
+    for(int bin = 0; bin < NBINS; bin++)
+        hog[bin] = (hog[bin]*100)/sumbin;
 
     rassert(hog.size() == NBINS, 23478937290010);
     return hog;
@@ -78,16 +88,14 @@ std::ostream &operator<<(std::ostream &os, const HoG &hog) {
 
     // TODO
     os << "HoG[";
-    for (int bin = 0; bin < NBINS; ++bin) {
-//        os << angleInDegrees << "=" << percentage << "%, ";
+    for (int bin = 0; bin < NBINS-1; ++bin) {
+        os << (360.0/NBINS)*bin << "=" << hog[bin] << "%, ";
     }
-    os << "]";
+    os << (360.0/NBINS)*(NBINS - 1) << "=" << hog[NBINS-1] << "%]";
     return os;
 }
 
-double pow2(double x) {
-    return x * x;
-}
+
 
 // TODO реализуйте функцию которая по двум гистограммам будет говорить насколько они похожи
 double distance(HoG a, HoG b) {
@@ -98,6 +106,11 @@ double distance(HoG a, HoG b) {
     // подумайте - как можно добавить независимость (инвариантность) гистаграммы градиентов к тому насколько контрастная или блеклая картинка?
     // подсказка: на контрастной картинке все градиенты гораздо сильнее, а на блеклой картинке все градиенты гораздо слабее, но пропорции между градиентами (распроцентовка) не изменны!
 
-    double res = 0.0;
-    return res;
+    double sumOfSqures = 0;
+    for(int bin = 0; bin < NBINS; bin++)
+    {
+        sumOfSqures += (a[bin] - b[bin]) * (a[bin] - b[bin]);
+    }
+
+    return sqrt(sumOfSqures);
 }
