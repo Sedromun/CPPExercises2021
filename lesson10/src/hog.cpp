@@ -35,7 +35,7 @@ HoG buildHoG(cv::Mat grad_x, cv::Mat grad_y) {
             float dx = grad_x.at<float>(j, i);
             float dy = grad_y.at<float>(j, i);
             float strength = sqrt(dx * dx + dy * dy);
-            float angle = atan2(dy, dx);
+            float angle = atan2(-dy, dx);
             if(angle < 0)
                 angle += 2*M_PI;
 
