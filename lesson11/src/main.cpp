@@ -90,7 +90,7 @@ void test(std::string name, std::string k) {
     cv::imwrite(out_path + "/06_contours_points.jpg", imageWithContoursPoints);
 
     std::vector<std::vector<cv::Point>> contoursPoints2;
-    cv::findContours(binary, contoursPoints2, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_NONE);
+    cv::findContours(binary, contoursPoints2, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_TC89_L1);
     // TODO:
     // Обратите внимание на кромку картинки - она всё победила, т.к. черное - это ноль - пустота, а белое - это 255 - сам объект интереса
     // как перевернуть ситуацию чтобы периметр не был засчитан как контур?
@@ -104,16 +104,20 @@ void test(std::string name, std::string k) {
 
     // TODO 06 наконец давайте посмотрим какие буковки нашлись - обрамим их прямоугольниками
     cv::Mat imgWithBoxes = original.clone();
-    for (int contourI = 0; contourI < contoursPoints.size(); ++contourI) {
-        std::vector<cv::Point> points = contoursPoints[contourI]; // перем очередной контур
+    std::vector<int> sizes;
+    for (int contourI = 0; contourI < contoursPoints2.size(); ++contourI) {
+        std::vector<cv::Point> points = contoursPoints2[contourI]; // перем очередной контуr
         cv::Rect box = cv::boundingRect(points); // строим прямоугольник по всем пикселям контура (bounding box = бокс ограничивающий объект)
         cv::Scalar blackColor(0, 0, 0);
+        sizes.push_back(box.area());
         // TODO прочитайте документацию cv::rectangle чтобы нарисовать прямоугольник box с толщиной 2 и черным цветом (обратите внимание какие есть поля у box)
         cv::rectangle(imgWithBoxes, box, blackColor, 2, cv::LINE_4);
     }
     cv::imwrite(out_path + "/08_boxes.jpg", imgWithBoxes); // TODO если вдруг у вас в картинке странный результат
                                                            // например если нет прямоугольников - посмотрите в верхний левый пиксель - белый ли он?
-                                                           // если не белый, то что это значит? почему так? сколько в целом нашлось связных компонент?
+    int median = sizes[sizes.size()/2];
+
+
 }
 
 void finalExperiment(std::string name, std::string k) {
@@ -121,6 +125,22 @@ void finalExperiment(std::string name, std::string k) {
     // 1) вытащите результат которым вы довольны в функцию splitSymbols в parseSymbols.h/parseSymbols.cpp
     //    эта функция должна находить контуры букв и извлекать кусочки картинок в вектор
     // 2) классифицируйте каждую из вытащенных букв (результатом из прошлого задания) и выведите полученный текст в консоль
+    std::cout << "Processing " << name << "/" << k << "..." << std::endl;
+
+    std::string full_path = "H:\\CLionProjects\\CPPExercises2021\\lesson11\\data\\" + name + "\\" + k + ".png";
+
+    // создаем папочки в которые будем сохранять картинки с промежуточными результатами
+    std::filesystem::create_directory("H:\\CLionProjects\\CPPExercises2021\\lesson11\\resultsData\\" + name);
+    std::string out_path = "H:\\CLionProjects\\CPPExercises2021\\lesson11\\resultsData\\" + name + "\\" + k;
+    std::filesystem::create_directory(out_path);
+
+    // считываем оригинальную исходную картинку
+    cv::Mat original = cv::imread(full_path);
+    rassert(!original.empty(), 238982391080010);
+    rassert(original.type() == CV_8UC3, 23823947238900020);
+
+    std::vector<cv::Mat> = splitSymbols(original);
+
 }
 
 
@@ -138,8 +158,8 @@ int main() {
 //                test(names[i], std::to_string(j));
 //            }
 //        }
-
-        //test("alphabet", "3_gradient");
+//
+//        test("alphabet", "3_gradient");
 
         return 0;
     } catch (const std::exception &e) {

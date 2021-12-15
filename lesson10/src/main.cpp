@@ -10,7 +10,7 @@
 void test(std::string name) {
     std::cout << "Processing image " << name << ".jpg..." << std::endl;
 
-    std::string full_path = "C:\\Users\\vanar\\CLionProjects\\CPPExercises2021\\lesson10\\data\\" + name + ".jpg";
+    std::string full_path = "H:\\CLionProjects\\CPPExercises2021\\lesson10\\data\\" + name + ".jpg";
 
     cv::Mat img = cv::imread(full_path);
     rassert(!img.empty(), 238982391080010);

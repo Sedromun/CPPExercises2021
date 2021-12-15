@@ -8,7 +8,7 @@
 
 
 #define NSAMPLES_PER_LETTER 5
-std::string LETTER_DIR_PATH = "C:\\Users\\vanar\\CLionProjects\\CPPExercises2021\\lesson10\\generatedData\\letters\\";
+std::string LETTER_DIR_PATH = "H:\\CLionProjects\\CPPExercises2021\\lesson10\\generatedData\\letters\\";
 
 
 int randFont() {
