@@ -3,6 +3,7 @@
 #include <libutils/rasserts.h>
 
 #include "parseSymbols.h"
+#include "hog.h"
 
 #include <opencv2/imgproc.hpp>
 
@@ -35,15 +36,21 @@ cv::Mat drawContours(int rows, int cols, std::vector<std::vector<cv::Point>> con
     return imageWithContoursPoints;
 }
 
+bool comp(std::vector<cv::Point> a, std::vector<cv::Point> b)
+{
+    cv::Rect boxA = cv::boundingRect(a);
+    cv::Rect boxB = cv::boundingRect(b);
+    return (boxA.br().x < boxB.br().x);
+}
 
 void test(std::string name, std::string k) {
     std::cout << "Processing " << name << "/" << k << "..." << std::endl;
 
-    std::string full_path = "H:\\CLionProjects\\CPPExercises2021\\lesson11\\data\\" + name + "\\" + k + ".png";
+    std::string full_path = "C:\\Users\\vanar\\CLionProjects\\CPPExercises2021\\lesson11\\data\\" + name + "\\" + k + ".png";
 
     // создаем папочки в которые будем сохранять картинки с промежуточными результатами
-    std::filesystem::create_directory("H:\\CLionProjects\\CPPExercises2021\\lesson11\\resultsData\\" + name);
-    std::string out_path = "H:\\CLionProjects\\CPPExercises2021\\lesson11\\resultsData\\" + name + "\\" + k;
+    std::filesystem::create_directory("C:\\Users\\vanar\\CLionProjects\\CPPExercises2021\\lesson11\\resultsData\\" + name);
+    std::string out_path = "C:\\Users\\vanar\\CLionProjects\\CPPExercises2021\\lesson11\\resultsData\\" + name + "\\" + k;
     std::filesystem::create_directory(out_path);
 
     // считываем оригинальную исходную картинку
@@ -105,43 +112,78 @@ void test(std::string name, std::string k) {
     // TODO 06 наконец давайте посмотрим какие буковки нашлись - обрамим их прямоугольниками
     cv::Mat imgWithBoxes = original.clone();
     std::vector<int> sizes;
+    std::vector<cv::Point> centers;
     for (int contourI = 0; contourI < contoursPoints2.size(); ++contourI) {
         std::vector<cv::Point> points = contoursPoints2[contourI]; // перем очередной контуr
         cv::Rect box = cv::boundingRect(points); // строим прямоугольник по всем пикселям контура (bounding box = бокс ограничивающий объект)
         cv::Scalar blackColor(0, 0, 0);
-        sizes.push_back(box.area());
+        sizes.push_back(box.height);
+        centers.push_back(cv::Point(box.width/2, box.height/2));
         // TODO прочитайте документацию cv::rectangle чтобы нарисовать прямоугольник box с толщиной 2 и черным цветом (обратите внимание какие есть поля у box)
         cv::rectangle(imgWithBoxes, box, blackColor, 2, cv::LINE_4);
     }
     cv::imwrite(out_path + "/08_boxes.jpg", imgWithBoxes); // TODO если вдруг у вас в картинке странный результат
-                                                           // например если нет прямоугольников - посмотрите в верхний левый пиксель - белый ли он?
+    // например если нет прямоугольников - посмотрите в верхний левый пиксель - белый ли он?
+    sort(sizes.begin(), sizes.end());
     int median = sizes[sizes.size()/2];
+    int str = 0;
+    std::vector<std::vector<std::vector<cv::Point>>> stroki(centers.size());
+    for(int i = 1; i < centers.size(); i++)
+    {
+        if(centers[i].y - centers[i-1].y > median*2/3)
+            str++;
+        stroki[str].push_back(contoursPoints2[i]);
+    }
+
+
+    for(int strI = 0; strI < stroki.size(); strI++){
+        if(stroki[strI].size() == 0)
+            continue;
+        std::vector<std::vector<cv::Point>> curString = stroki[strI];
+        sort(curString.begin(), curString.end(), comp);
+        for(int i = 0; i < curString.size(); i++){
+            cv::Rect box = cv::boundingRect(curString[i]);
+            cv::Mat leftROI = original(box);
+            HoG hog = buildHoG(leftROI);
+            for (char letter = 'a'; letter <= 'z'; ++letter)
+            {
+                std::string LETTER_DIR_PATH = "C:\\Users\\vanar\\CLionProjects\\CPPExercises2021\\lesson11\\generatedData\\";
+                std::string letterDir = LETTER_DIR_PATH + letter + std::to_string(1) + ".png";
+                cv::Mat perfect = cv::imread(letterDir);
+                rassert(!perfect.empty(), 238982391080111);
+                HoG perfectHoG = buildHoG(perfect);
+                if(distance(hog, perfectHoG) < 5)
+                    std::cout << letter << " ";
+            }
+
+        }
+    }
 
 
 }
 
-void finalExperiment(std::string name, std::string k) {
-    // TODO 100:
-    // 1) вытащите результат которым вы довольны в функцию splitSymbols в parseSymbols.h/parseSymbols.cpp
-    //    эта функция должна находить контуры букв и извлекать кусочки картинок в вектор
-    // 2) классифицируйте каждую из вытащенных букв (результатом из прошлого задания) и выведите полученный текст в консоль
-    std::cout << "Processing " << name << "/" << k << "..." << std::endl;
-
-    std::string full_path = "H:\\CLionProjects\\CPPExercises2021\\lesson11\\data\\" + name + "\\" + k + ".png";
-
-    // создаем папочки в которые будем сохранять картинки с промежуточными результатами
-    std::filesystem::create_directory("H:\\CLionProjects\\CPPExercises2021\\lesson11\\resultsData\\" + name);
-    std::string out_path = "H:\\CLionProjects\\CPPExercises2021\\lesson11\\resultsData\\" + name + "\\" + k;
-    std::filesystem::create_directory(out_path);
-
-    // считываем оригинальную исходную картинку
-    cv::Mat original = cv::imread(full_path);
-    rassert(!original.empty(), 238982391080010);
-    rassert(original.type() == CV_8UC3, 23823947238900020);
-
-    std::vector<cv::Mat> = splitSymbols(original);
-
-}
+//void finalExperiment(std::string name, std::string k) {
+//    // TODO 100:
+//    // 1) вытащите результат которым вы довольны в функцию splitSymbols в parseSymbols.h/parseSymbols.cpp
+//    //    эта функция должна находить контуры букв и извлекать кусочки картинок в вектор
+//    // 2) классифицируйте каждую из вытащенных букв (результатом из прошлого задания) и выведите полученный текст в консоль
+//    std::cout << "Processing " << name << "/" << k << "..." << std::endl;
+//
+//    std::string full_path = "H:\\CLionProjects\\CPPExercises2021\\lesson11\\data\\" + name + "\\" + k + ".png";
+//
+//    // создаем папочки в которые будем сохранять картинки с промежуточными результатами
+//    std::filesystem::create_directory("H:\\CLionProjects\\CPPExercises2021\\lesson11\\resultsData\\" + name);
+//    std::string out_path = "H:\\CLionProjects\\CPPExercises2021\\lesson11\\resultsData\\" + name + "\\" + k;
+//    std::filesystem::create_directory(out_path);
+//
+//    // считываем оригинальную исходную картинку
+//    cv::Mat original = cv::imread(full_path);
+//    rassert(!original.empty(), 238982391080010);
+//    rassert(original.type() == CV_8UC3, 23823947238900020);
+//
+//    std::vector<cv::Mat> allSymbols = splitSymbols(original);
+//
+//}
 
 
 int main() {
@@ -149,15 +191,15 @@ int main() {
         test("alphabet", "3_gradient");
 
 //         TODO 50: обязательно получите результат на других картинках - прямо в цикле все их обработайте:
-//        std::vector<std::string> names;
-//        names.push_back("alphabet");
-//        names.push_back("line");
-//        names.push_back("text");
-//        for (int i = 0; i < names.size(); ++i) {
-//            for (int j = 1; j <= 5; ++j) {
-//                test(names[i], std::to_string(j));
-//            }
-//        }
+        std::vector<std::string> names;
+        names.push_back("alphabet");
+        names.push_back("line");
+        names.push_back("text");
+        for (int i = 0; i < names.size(); ++i) {
+            for (int j = 1; j <= 5; ++j) {
+                test(names[i], std::to_string(j));
+            }
+        }
 //
 //        test("alphabet", "3_gradient");
 
