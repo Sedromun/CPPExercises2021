@@ -2,6 +2,7 @@
 #include <sstream>
 #include <iostream>
 #include <stdexcept>
+#include <queue>
 
 #include <libutils/rasserts.h>
 
@@ -32,6 +33,9 @@ cv::Point2i decodeVertex(int vertexId, int nrows, int ncolumns) {
     // TODO: придумайте как найти номер строки и столбика пикселю по номеру вершины (просто поймите предыдущую функцию и эта функция не будет казаться сложной)
     int row = -1;
     int column = -1;
+
+    row = vertexId/ncolumns;
+    column = vertexId % ncolumns;
 
     // сверим что функция симметрично сработала:
     rassert(encodeVertex(row, column, nrows, ncolumns) == vertexId, 34782974923035);
@@ -80,8 +84,25 @@ void run(int mazeNumber) {
     cv::Mat window = maze.clone(); // на этой картинке будем визуализировать до куда сейчас дошла прокладка маршрута
 
     std::vector<int> distances(nvertices, INF);
-    // TODO СКОПИРУЙТЕ СЮДА ДЕЙКСТРУ ИЗ ПРЕДЫДУЩЕГО ИСХОДНИКА
+    std::vector<int> d (nvertices, INF),  p (nvertices);
+    d[start] = 0;
+    std::priority_queue < std::pair<int,int> > q;
+    q.push (std::make_pair (0, start));
+    while (!q.empty()) {
+        int v = q.top().second,  cur_d = -q.top().first;
+        q.pop();
+        if (cur_d > d[v])  continue;
 
+        for (size_t j=0; j<edges_by_vertex[v].size(); ++j) {
+            int to = edges_by_vertex[v][j].v,
+            len = edges_by_vertex[v][j].w;
+            if (d[v] + len < d[to]) {
+                d[to] = d[v] + len;
+                p[to] = v;
+                q.push (std::make_pair (-d[to], to));
+            }
+        }
+    }
     // TODO в момент когда вершина становится обработанной - красьте ее на картинке window в зеленый цвет и показывайте картинку:
     //    cv::Point2i p = decodeVertex(the_chosen_one, maze.rows, maze.cols);
     //    window.at<cv::Vec3b>(p.y, p.x) = cv::Vec3b(0, 255, 0);

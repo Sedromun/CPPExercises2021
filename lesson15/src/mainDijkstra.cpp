@@ -2,6 +2,8 @@
 #include <sstream>
 #include <iostream>
 #include <stdexcept>
+#include <queue>
+using namespace std;
 
 int debugPoint(int line) {
     if (line < 0)
@@ -30,49 +32,62 @@ void run() {
     //
     // То все замечательно и вы молодец.
 
-    int nvertices, medges;
-    std::cin >> nvertices;
-    std::cin >> medges;
+    int n, m;
+    std::cin >> n;
+    std::cin >> m;
 
-    std::vector<std::vector<Edge>> edges_by_vertex(nvertices);
-    for (int i = 0; i < medges; ++i) {
+    std::vector<std::vector<Edge>> g(n);
+    for (int i = 0; i < m; ++i) {
         int ai, bi, w;
         std::cin >> ai >> bi >> w;
-        rassert(ai >= 1 && ai <= nvertices, 23472894792020);
-        rassert(bi >= 1 && bi <= nvertices, 23472894792021);
 
         ai -= 1;
         bi -= 1;
-        rassert(ai >= 0 && ai < nvertices, 3472897424024);
-        rassert(bi >= 0 && bi < nvertices, 3472897424025);
 
-        Edge edgeAB(ai, bi, w);
-        edges_by_vertex[ai].push_back(edgeAB);
+        g[ai].push_back(Edge(ai, bi, w));
 
-        edges_by_vertex[bi].push_back(Edge(bi, ai, w)); // а тут - обратное ребро, можно конструировать объект прямо в той же строчке где он и потребовался
+        g[bi].push_back(Edge(bi, ai, w)); // а тут - обратное ребро, можно конструировать объект прямо в той же строчке где он и потребовался
     }
 
-    const int start = 0;
-    const int finish = nvertices - 1;
+    const int s = 0;
+    const int f = n - 1;
 
     const int INF = std::numeric_limits<int>::max();
 
-    std::vector<int> distances(nvertices, INF);
-    // TODO ...
+    vector<int> d (n, INF),  p (n);
+    d[s] = 0;
+    priority_queue < pair<int,int> > q;
+    q.push (make_pair (0, s));
+    while (!q.empty()) {
+        int v = q.top().second,  cur_d = -q.top().first;
+        q.pop();
+        if (cur_d > d[v])  continue;
 
-//    while (true) {
-//
-//    }
+        for (size_t j=0; j<g[v].size(); ++j) {
+            int to = g[v][j].v,
+            len = g[v][j].w;
+            if (d[v] + len < d[to]) {
+                d[to] = d[v] + len;
+                p[to] = v;
+                q.push (make_pair (-d[to], to));
+            }
+        }
+    }
 
-//    if (...) {
-//        ...
-//        for (...) {
-//            std::cout << (path[i] + 1) << " ";
-//        }
-//        std::cout << std::endl;
-//    } else {
-//        std::cout << -1 << std::endl;
-//    }
+    if(d[f] == INF) {
+        cout << -1;
+    }
+    else{
+        vector<int> path;
+        for (int v=f; v!=s; v=p[v])
+            path.push_back (v);
+        path.push_back (s);
+        for(int i = path.size() - 1; i >= 0; i--){
+            cout << path[i] + 1 << " ";
+        }
+    }
+
+
 }
 
 int main() {
