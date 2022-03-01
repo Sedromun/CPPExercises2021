@@ -27,12 +27,12 @@ void run() {
     bool drawOver = true; // рисовать ли поверх наложенную картинку (можно включить-включить чтобы мигнуть картинкой и проверить качество выравнивания)
     bool drawDebug = true; // рисовать ли поверх отладочную информацию (например красный кант вокруг нарисованной поверх картинки)
     bool useSIFTDescriptor = true; // SIFT работает довольно медленно, попробуйте использовать ORB + не забудьте что тогда вам нужен другой DescriptorMatcher
-
+    std::string fullPath = "C:\\Users\\vanar\\CLionProjects\\CPPExercises2021\\";
     cv::Mat imgFrame, imgForDetection, imgToDraw;
     // если у вас не работает через веб. камеру - будут использоваться заготовленные картинки
-    imgFrame = cv::imread("lesson14/data/1_box2/box0.png"); // пример кадра с вебкамеры, на нем мы хотим найти объект и вместо него нарисовать другую картинку
-    imgForDetection = cv::imread("lesson14/data/1_box2/box1.png"); // пример картинки которую мы хотим найти на видеокадре
-    imgToDraw = cv::imread("lesson14/data/1_box2/box1_nesquik.png"); // пример картинки которую мы хотим нарисовать заместо искомой
+    imgFrame = cv::imread(fullPath + "lesson14/data/1_box2/box0.png"); // пример кадра с вебкамеры, на нем мы хотим найти объект и вместо него нарисовать другую картинку
+    imgForDetection = cv::imread(fullPath + "lesson14/data/1_box2/box1.png"); // пример картинки которую мы хотим найти на видеокадре
+    imgToDraw = cv::imread(fullPath + "lesson14/data/1_box2/box1_nesquik.png"); // пример картинки которую мы хотим нарисовать заместо искомой
     rassert(!imgFrame.empty(), 324789374290023);
     rassert(!imgForDetection.empty(), 3789572984290019);
     rassert(!imgToDraw.empty(), 3789572984290021);
