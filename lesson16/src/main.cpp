@@ -15,8 +15,10 @@ bool isPixelEmpty(cv::Vec3b color) {
     // TODO 1 реализуйте isPixelEmpty(color):
     // - верните true если переданный цвет - полностью черный (такие пиксели мы считаем пустыми)
     // - иначе верните false
-    rassert(false, "325235141242153: You should do TODO 1 - implement isPixelEmpty(color)!");
-    return true;
+    if(color[0] + color[1] + color[2] == 0)
+        return true;
+    else
+        return false;
 }
 
 void run(std::string caseName) {

@@ -46,14 +46,14 @@ cv::Point2i decodeVertex(int vertexId, int nrows, int ncolumns) {
 }
 
 void run(int mazeNumber) {
-    cv::Mat maze = cv::imread("lesson15/data/mazesImages/maze" + std::to_string(mazeNumber) + ".png");
+    cv::Mat maze = cv::imread("H:\\CLionProjects\\CPPExercises2021\\lesson15\\data\\mazesImages\\maze" + std::to_string(mazeNumber) + ".png");
     rassert(!maze.empty(), 324783479230019);
     rassert(maze.type() == CV_8UC3, 3447928472389020);
     std::cout << "Maze resolution: " << maze.cols << "x" << maze.rows << std::endl;
 
-    int nvertices = 0; // TODO
+    int nvertices = maze.cols * maze.rows; // TODO
 
-    std::vector<std::vector<Edge>> edges_by_vertex(nvertices);
+    std::vector<std::vector<Edge>> edges_by_vertex(nvertices+5);
     for (int j = 0; j < maze.rows; ++j) {
         for (int i = 0; i < maze.cols; ++i) {
             cv::Vec3b color = maze.at<cv::Vec3b>(j, i);
@@ -61,7 +61,46 @@ void run(int mazeNumber) {
             unsigned char green = color[1];
             unsigned char red = color[2];
 
+            int w = (int)(blue + green + red);
+
             // TODO добавьте соотвтетсвующие этому пикселю ребра
+            int k = encodeVertex(j, i, maze.rows, maze.cols);
+            if(j == 0){
+                if(i == 0){
+                    edges_by_vertex[k].push_back(Edge(0,1,w));
+                    edges_by_vertex[k].push_back(Edge(0,maze.cols,w));
+                }
+                else if(i == maze.cols - 1){
+                    edges_by_vertex[k].push_back(Edge(maze.cols - 1,maze.cols - 2,w));
+                    edges_by_vertex[k].push_back(Edge(maze.cols - 1,2*maze.cols - 1,w));
+                }
+                else{
+                    edges_by_vertex[k].push_back(Edge(k,k+1,w));
+                    edges_by_vertex[k].push_back(Edge(k,k-1,w));
+                    edges_by_vertex[k].push_back(Edge(k,k+maze.cols,w));
+                }
+            }
+            else if(j == maze.rows){
+                if(i == 0){
+                    edges_by_vertex[k].push_back(Edge(k,k+1,w));
+                    edges_by_vertex[k].push_back(Edge(k,k-maze.cols,w));
+                }
+                else if(i == maze.cols - 1){
+                    edges_by_vertex[k].push_back(Edge(k,k-1,w));
+                    edges_by_vertex[k].push_back(Edge(k,k - maze.cols,w));
+                }
+                else{
+                    edges_by_vertex[k].push_back(Edge(k,k+1,w));
+                    edges_by_vertex[k].push_back(Edge(k,k-1,w));
+                    edges_by_vertex[k].push_back(Edge(k,k-maze.cols,w));
+                }
+            }
+            else{
+                edges_by_vertex[k].push_back(Edge(k,k+1,w));
+                edges_by_vertex[k].push_back(Edge(k,k-1,w));
+                edges_by_vertex[k].push_back(Edge(k,k-maze.cols,w));
+                edges_by_vertex[k].push_back(Edge(k,k+maze.cols,w));
+            }
         }
     }
 
@@ -103,6 +142,20 @@ void run(int mazeNumber) {
             }
         }
     }
+
+    int cnt = 0;
+    for (int v=finish; v!=start; v=p[v]){
+        cv::Point2i p = decodeVertex(v, maze.rows, maze.cols);
+        window.at<cv::Vec3b>(p.y, p.x) = cv::Vec3b(0, 255, 0);
+        cnt++;
+        if(cnt == 100)
+        {
+            cv::imshow("Maze", window);
+            cv::waitKey(1);
+            cnt = 0;
+        }
+    }
+
     // TODO в момент когда вершина становится обработанной - красьте ее на картинке window в зеленый цвет и показывайте картинку:
     //    cv::Point2i p = decodeVertex(the_chosen_one, maze.rows, maze.cols);
     //    window.at<cv::Vec3b>(p.y, p.x) = cv::Vec3b(0, 255, 0);
@@ -113,7 +166,7 @@ void run(int mazeNumber) {
     // TODO обозначьте найденный маршрут красными пикселями
 
     // TODO сохраните картинку window на диск
-
+    cv::imwrite("H:\\CLionProjects\\CPPExercises2021\\lesson15\\data\\resultMaze\\EZmaze" + std::to_string(mazeNumber) + ".png", window);
     std::cout << "Finished!" << std::endl;
 
     // Показываем результат пока пользователь не насладиться до конца и не нажмет Escape
@@ -124,7 +177,7 @@ void run(int mazeNumber) {
 
 int main() {
     try {
-        int mazeNumber = 1;
+        int mazeNumber = 2;
         run(mazeNumber);
 
         return 0;
