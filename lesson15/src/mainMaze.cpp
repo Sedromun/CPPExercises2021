@@ -46,7 +46,7 @@ cv::Point2i decodeVertex(int vertexId, int nrows, int ncolumns) {
 }
 
 void run(int mazeNumber) {
-    cv::Mat maze = cv::imread("H:\\CLionProjects\\CPPExercises2021\\lesson15\\data\\mazesImages\\maze" + std::to_string(mazeNumber) + ".png");
+    cv::Mat maze = cv::imread("C:\\Users\\vanar\\CLionProjects\\CPPExercises2021\\lesson15\\data\\mazesImages\\maze" + std::to_string(mazeNumber) + ".png");
     rassert(!maze.empty(), 324783479230019);
     rassert(maze.type() == CV_8UC3, 3447928472389020);
     std::cout << "Maze resolution: " << maze.cols << "x" << maze.rows << std::endl;
@@ -118,21 +118,21 @@ void run(int mazeNumber) {
         rassert(false, 324289347238920081);
     }
 
-    const int INF = std::numeric_limits<int>::max();
+    const long long INF = std::numeric_limits<long long>::max();
 
     cv::Mat window = maze.clone(); // на этой картинке будем визуализировать до куда сейчас дошла прокладка маршрута
 
-    std::vector<int> distances(nvertices, INF);
-    std::vector<int> d (nvertices, INF),  p (nvertices);
+    std::vector<long long> distances(nvertices, INF);
+    std::vector<long long> d (nvertices, INF),  p (nvertices);
     d[start] = 0;
-    std::priority_queue < std::pair<int,int> > q;
+    std::priority_queue < std::pair<long long,long long> > q;
     q.push (std::make_pair (0, start));
     while (!q.empty()) {
-        int v = q.top().second,  cur_d = -q.top().first;
+        long long v = q.top().second,  cur_d = -q.top().first;
         q.pop();
         if (cur_d > d[v])  continue;
 
-        for (size_t j=0; j<edges_by_vertex[v].size(); ++j) {
+        for (int j=0; j<edges_by_vertex[v].size(); ++j) {
             int to = edges_by_vertex[v][j].v,
             len = edges_by_vertex[v][j].w;
             if (d[v] + len < d[to]) {
@@ -166,7 +166,7 @@ void run(int mazeNumber) {
     // TODO обозначьте найденный маршрут красными пикселями
 
     // TODO сохраните картинку window на диск
-    cv::imwrite("H:\\CLionProjects\\CPPExercises2021\\lesson15\\data\\resultMaze\\EZmaze" + std::to_string(mazeNumber) + ".png", window);
+    cv::imwrite("C:\\Users\\vanar\\CLionProjects\\CPPExercises2021\\lesson15\\data\\mazesImages\\maze" + std::to_string(mazeNumber) + ".png", window);
     std::cout << "Finished!" << std::endl;
 
     // Показываем результат пока пользователь не насладиться до конца и не нажмет Escape

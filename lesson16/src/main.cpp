@@ -12,7 +12,6 @@
 #include <libutils/rasserts.h>
 
 bool isPixelEmpty(cv::Vec3b color) {
-    // TODO 1 реализуйте isPixelEmpty(color):
     // - верните true если переданный цвет - полностью черный (такие пиксели мы считаем пустыми)
     // - иначе верните false
     if(color[0] + color[1] + color[2] == 0)
@@ -22,8 +21,9 @@ bool isPixelEmpty(cv::Vec3b color) {
 }
 
 void run(std::string caseName) {
-    cv::Mat img0 = cv::imread("lesson16/data/" + caseName + "/0.png");
-    cv::Mat img1 = cv::imread("lesson16/data/" + caseName + "/1.png");
+    std::string path = "C:\\Users\\vanar\\CLionProjects\\CPPExercises2021\\lesson16\\data\\";
+    cv::Mat img0 = cv::imread( path + caseName + "/0.png");
+    cv::Mat img1 = cv::imread(path + caseName + "/1.png");
     rassert(!img0.empty(), 324789374290018);
     rassert(!img1.empty(), 378957298420019);
 
@@ -78,7 +78,7 @@ void run(std::string caseName) {
                                                                              // "Note that whenever an H matrix cannot be estimated, an empty one will be returned."
 
     // создаем папку в которую будем сохранять результаты - lesson16/resultsData/ИМЯ_НАБОРА/
-    std::string resultsDir = "lesson16/resultsData/";
+    std::string resultsDir = "C:\\Users\\vanar\\CLionProjects\\CPPExercises2021\\lesson16\\resultsData\\";
     if (!std::filesystem::exists(resultsDir)) { // если папка еще не создана
         std::filesystem::create_directory(resultsDir); // то создаем ее
     }
@@ -128,8 +128,7 @@ void run(std::string caseName) {
     cv::warpPerspective(img1, panoBothNaive, H10, panoBothNaive.size(), cv::INTER_LINEAR, cv::BORDER_TRANSPARENT);
     cv::imwrite(resultsDir + "4panoBothNaive.jpg", panoBothNaive);
 
-    // TODO 1 реализуйте isPixelEmpty(color) объявленную в начале этого файла - она пригодится нам чтобы легко понять какие пиксели в панораме пустые, какие - нет
-    // (т.е. эта функция позволит дальше понимать в этот пиксель наложилась исходная картинка или же там все еще тьма)
+     // (т.е. эта функция позволит дальше понимать в этот пиксель наложилась исходная картинка или же там все еще тьма)
 
     cv::Mat panoDiff(pano_rows, pano_cols, CV_8UC3, cv::Scalar(0, 0, 0));
     // TODO 2 вам надо заполнить panoDiff картинку так чтобы было четко ясно где pano0 картинка (объявлена выше) и pano1 картинка отличаются сильно, а где - слабо:
@@ -140,6 +139,54 @@ void run(std::string caseName) {
     // При этом сделайте так чтобы самый сильно отличающийся пиксель - всегда был идеально белым (255), т.е. выполните нормировку с учетом того какая максимальная разница яркости присутствует
     // Напоминание - вот так можно выставить цвет в пикселе:
     //  panoDiff.at<cv::Vec3b>(j, i) = cv::Vec3b(blueValue, greenValue, redValue);
+
+    for(int i = 0; i < panoDiff.cols; i++){
+        for(int j = 0; j < panoDiff.rows; j++){
+            if(isPixelEmpty(pano0.at<cv::Vec3b>(j, i)) && isPixelEmpty(pano1.at<cv::Vec3b>(j, i)))
+                continue;
+            if(isPixelEmpty(pano0.at<cv::Vec3b>(j, i)) || isPixelEmpty(pano1.at<cv::Vec3b>(j, i))){
+                panoDiff.at<cv::Vec3b>(j, i) = cv::Vec3b(255, 255, 255);
+                continue;
+            }
+            cv::Vec3b panoCol0 = pano0.at<cv::Vec3b>(j, i);
+            cv::Vec3b panoCol1 = pano1.at<cv::Vec3b>(j, i);
+            float grayIntensity0 = 0.2126 * panoCol0[0] + 0.7152 * panoCol0[1] + 0.0722 * panoCol0[2];
+            float grayIntensity1 = 0.2126 * panoCol1[0] + 0.7152 * panoCol1[1] + 0.0722 * panoCol1[2];
+            panoDiff.at<cv::Vec3b>(j, i) = cv::Vec3b(std::abs(panoCol0[0] - panoCol1[0]), std::abs(panoCol0[1] - panoCol1[1]), std::abs(panoCol0[2] - panoCol1[2]));
+        }
+    }
+
+//    float maxblue = 0;
+//    float maxred = 0;
+//    float maxgreen = 0;
+//    for(int i = 0; i < panoDiff.cols; i++){
+//        for(int j = 0; j < panoDiff.rows; j++){
+//            cv::Vec3b panoCol = panoDiff.at<cv::Vec3b>(j, i);
+//            if(isPixelEmpty(panoCol))
+//                continue;
+//            if(panoCol[0] == 225 && panoCol[1] == 225 && panoCol[2] == 225)
+//                continue;
+//            maxblue = std::max((float)panoCol[0], maxblue);
+//            maxred = std::max((float)panoCol[1], maxred);
+//            maxgreen = std::max((float)panoCol[2], maxgreen);
+//        }
+//    }
+//
+//    float bluediff = 255 - maxblue;
+//    float reddiff = 255 - maxred;
+//    float greendiff = 255 - maxgreen;
+//
+//
+//    for(int i = 0; i < panoDiff.cols; i++){
+//        for(int j = 0; j < panoDiff.rows; j++){
+//            cv::Vec3b panoCol = panoDiff.at<cv::Vec3b>(j, i);
+//            if(isPixelEmpty(panoCol))
+//                continue;
+//            if(panoCol[0] == 225 && panoCol[1] == 225 && panoCol[2] == 225)
+//                continue;
+//            panoDiff.at<cv::Vec3b>(j, i) = cv::Vec3b(panoCol[0] + bluediff, panoCol[1] + reddiff, panoCol[2] + greendiff);
+//        }
+//    }
 
     cv::imwrite(resultsDir + "5panoDiff.jpg", panoDiff);
 }
