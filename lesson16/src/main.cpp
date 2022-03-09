@@ -21,7 +21,7 @@ bool isPixelEmpty(cv::Vec3b color) {
 }
 
 void run(std::string caseName) {
-    std::string path = "C:\\Users\\vanar\\CLionProjects\\CPPExercises2021\\lesson16\\data\\";
+    std::string path = "H:\\CLionProjects\\CPPExercises2021\\lesson16\\data\\";
     cv::Mat img0 = cv::imread( path + caseName + "/0.png");
     cv::Mat img1 = cv::imread(path + caseName + "/1.png");
     rassert(!img0.empty(), 324789374290018);
@@ -78,7 +78,7 @@ void run(std::string caseName) {
                                                                              // "Note that whenever an H matrix cannot be estimated, an empty one will be returned."
 
     // создаем папку в которую будем сохранять результаты - lesson16/resultsData/ИМЯ_НАБОРА/
-    std::string resultsDir = "C:\\Users\\vanar\\CLionProjects\\CPPExercises2021\\lesson16\\resultsData\\";
+    std::string resultsDir = "H:\\CLionProjects\\CPPExercises2021\\lesson16\\resultsData\\";
     if (!std::filesystem::exists(resultsDir)) { // если папка еще не создана
         std::filesystem::create_directory(resultsDir); // то создаем ее
     }
