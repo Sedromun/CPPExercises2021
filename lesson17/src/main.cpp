@@ -287,7 +287,7 @@ void run(std::string caseName) {
     cv::Mat sourceId(pano_rows, pano_cols, CV_8UC1, cv::Scalar(PIXEL_NO_DATA));
     for (int i = 0; i < seam.size(); ++i) {
         // TODO заполните писели лежащие на шве, чтобы легко было понять что через них перешагивать нельзя:
-        // sourceId.at<unsigned char>(pointOnSeam.y, pointOnSeam.x) = PIXEL_IS_ON_SEAM;
+        sourceId.at<unsigned char>(seam[i].y, seam[i].x) = PIXEL_IS_ON_SEAM;
     }
 
     // TODO левый верхний угол - точно из первой картинки - отмечаем его и добавляем в текущую волну для обработки
@@ -309,6 +309,14 @@ void run(std::string caseName) {
             for (int k = 0; k < 4; ++k) { // смотрим на четырех соседей
                 int nx = p.x + dxs[k];
                 int ny = p.y + dys[k];
+                if(nx < 0 || ny < 0 || nx >= sourceId.cols || ny >= sourceId.rows)
+                    continue;
+                if(sourceId.at<unsigned char>(ny, nx) == PIXEL_IS_ON_SEAM)
+                    continue;
+                if(sourceId.at<unsigned char>(ny, nx) == PIXEL_FROM_PANO0)
+                    continue;
+                nextWave.push_back(cv::Point2i (nx, ny));
+                sourceId.at<unsigned char>(ny, nx) = PIXEL_FROM_PANO0;
                 // TODO посмотрите на соседний пиксель (nx, ny) и либо отметьте его как покрытый первой картинкой и добавьте в следующую волну, либо проигнорируйте
                 // см. описание на сайте
             }
@@ -317,13 +325,24 @@ void run(std::string caseName) {
     }
     for (int j = 0; j < pano_rows; ++j) {
         for (int i = 0; i < pano_cols; ++i) {
-            // TODO отметьте все остальные пиксели как пиксели второй картинки
+            if(sourceId.at<unsigned char>(j, i) == PIXEL_NO_DATA)
+                sourceId.at<unsigned char>(j, i) = PIXEL_FROM_PANO1;
         }
     }
     cv::imwrite(resultsDir + "6sourceId.jpg", sourceId);
 
     cv::Mat newPano(pano_rows, pano_cols, CV_8UC3, cv::Scalar(0, 0, 0));
     // TODO постройте новую панораму в соответствии с sourceId картой (забирая цвета из pano0 и pano1)
+
+    for (int j = 0; j < newPano.rows; ++j) {
+        for (int i = 0; i < newPano.cols; ++i) {
+            if(sourceId.at<unsigned char>(j, i) == PIXEL_FROM_PANO0)
+                newPano.at<unsigned char>(j, i) = pano0.at<unsigned char>(j, i);
+            else if(sourceId.at<unsigned char>(j, i) == PIXEL_FROM_PANO1 || sourceId.at<unsigned char>(j, i) == PIXEL_IS_ON_SEAM)
+                newPano.at<unsigned char>(j, i) = pano1.at<unsigned char>(j, i);
+        }
+    }
+
     cv::imwrite(resultsDir + "7newPano.jpg", newPano);
 }
 
