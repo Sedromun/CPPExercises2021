@@ -334,12 +334,12 @@ void run(std::string caseName) {
     cv::Mat newPano(pano_rows, pano_cols, CV_8UC3, cv::Scalar(0, 0, 0));
     // TODO постройте новую панораму в соответствии с sourceId картой (забирая цвета из pano0 и pano1)
 
-    for (int j = 0; j < newPano.rows; ++j) {
-        for (int i = 0; i < newPano.cols; ++i) {
+    for (int i = 0; i < pano_cols; ++i) {
+        for (int j = 0; j < pano_rows; ++j) {
             if(sourceId.at<unsigned char>(j, i) == PIXEL_FROM_PANO0)
-                newPano.at<unsigned char>(j, i) = pano0.at<unsigned char>(j, i);
-            else if(sourceId.at<unsigned char>(j, i) == PIXEL_FROM_PANO1 || sourceId.at<unsigned char>(j, i) == PIXEL_IS_ON_SEAM)
-                newPano.at<unsigned char>(j, i) = pano1.at<unsigned char>(j, i);
+                newPano.at<cv::Vec3b>(j, i) = pano0.at<cv::Vec3b>(j, i);
+            else //if(sourceId.at<unsigned char>(j, i) == PIXEL_FROM_PANO1 || sourceId.at<unsigned char>(j, i) == PIXEL_IS_ON_SEAM)
+                newPano.at<cv::Vec3b>(j, i) = pano1.at<cv::Vec3b>(j, i);
         }
     }
 
