@@ -9,54 +9,59 @@
 #include <iostream>
 #include <filesystem>
 #include <memory>
+#include <random>
 
 #include <libutils/rasserts.h>
 #include <libutils/fast_random.h>
 
+using namespace std;
+using namespace cv;
 
 // Эта функция говорит нам правда ли пиксель отмаскирован, т.е. отмечен как "удаленный", т.е. белый
-bool isPixelMasked(cv::Mat mask, int j, int i) {
-    rassert(j >= 0 && j < mask.rows, 372489347280017);
-    rassert(i >= 0 && i < mask.cols, 372489347280018);
+bool isPixelMasked(cv::Mat mask, int i, int j) {
+    rassert(i >= 0 && i < mask.rows, 372489347280017);
+    rassert(j >= 0 && j < mask.cols, 372489347280018);
     rassert(mask.type() == CV_8UC3, 2348732984792380019);
-
-
-    cv::Vec3b color = mask.at<cv::Vec3b>(j, i);
-    if(color[0] + color[1] + color[2] == 765)
+    Vec3b color = mask.at<Vec3b>(i, j);
+    if(color[0]+color[1]+color[2]>100)
         return 1;
     return 0;
 }
-
-unsigned char estimateQuality(cv::Mat image, int j, int i, int ny, int nx){
-    unsigned char ans = 0;
-    for(int s = -2; s <= 2; s++){ //j
-        for(int q = -2; q <= 2; q++){ //i
-            if(!(j + s >= 0 && j + s < image.rows && i + q >= 0 && i + q < image.cols && ny + s >= 0 && ny + s < image.rows && nx + q >= 0 && nx + q < image.cols))
-                continue;
-            cv::Vec3b color0 = image.at<cv::Vec3b>(j, i);
-            cv::Vec3b color1 = image.at<cv::Vec3b>(ny, nx);
-            ans += abs(color0[0] - color1[0]) + abs(color0[1] - color1[1]) + abs(color0[2] - color1[2]);
-        }
+default_random_engine generator;
+normal_distribution<double> rndNorm(5.0,2.0);
+int getNorm(int w, int x0){
+    double gen = (rndNorm(generator)/10-0.5)*w;
+    while(x0+int(gen)<0 || x0+int(gen)>=w){
+        gen = (rndNorm(generator)/10-0.5)*w;
     }
-    return ans;
+    return x0+int(gen);
 }
-
+mt19937 rnd(42);
 void run(int caseNumber, std::string caseName) {
+    int test[20];
+    for(int i = 0; i<20; i++)
+        test[i] = 0;
+    for(int i = 0; i<20000; i++){
+        int temp = getNorm(20, 10);
+        if(temp>=0 && temp<20)
+            test[temp]++;
+    }
+    cout << "Normal distribution: ";
+    for(int i = 0; i<20; i++)
+        cout << test[i] << " ";
+    cout << "\n";
     std::cout << "_________Case #" << caseNumber << ": " <<  caseName << "_________" << std::endl;
-    std::string path = "H:\\CLionProjects\\CPPExercises2021\\lesson18\\data\\";
-    cv::Mat original = cv::imread(path + std::to_string(caseNumber) + "_" + caseName + "/" + std::to_string(caseNumber) + "_original.jpg");
-    cv::Mat mask = cv::imread(path + std::to_string(caseNumber) + "_" + caseName + "/" + std::to_string(caseNumber) + "_mask.png");
+
+    cv::Mat original = cv::imread("lesson18/data/" + std::to_string(caseNumber) + "_" + caseName + "/" + std::to_string(caseNumber) + "_original.jpg");
+    cv::Mat mask = cv::imread("lesson18/data/" + std::to_string(caseNumber) + "_" + caseName + "/" + std::to_string(caseNumber) + "_mask.png");
     rassert(!original.empty(), 324789374290018);
     rassert(!mask.empty(), 378957298420019);
 
-    // TODO напишите rassert сверяющий разрешение картинки и маски
-    rassert(original.rows == mask.rows, 228228228228);
-    rassert(original.cols == mask.cols, 133713371337);
-    // TODO выведите в консоль это разрешение картинки
-    std::cout << "Image resolution: " << original.rows << " x " << original.cols << std::endl;
+    rassert(mask.cols==original.cols && mask.rows==original.rows, 1283912);
+    std::cout << "Image resolution: " << mask.cols << "x" << mask.rows << std::endl;
 
     // создаем папку в которую будем сохранять результаты - lesson18/resultsData/ИМЯ_НАБОРА/
-    std::string resultsDir = "H:\\CLionProjects\\CPPExercises2021\\lesson18\\resultsData\\";
+    std::string resultsDir = "lesson18/resultsData/";
     if (!std::filesystem::exists(resultsDir)) { // если папка еще не создана
         std::filesystem::create_directory(resultsDir); // то создаем ее
     }
@@ -64,84 +69,211 @@ void run(int caseNumber, std::string caseName) {
     if (!std::filesystem::exists(resultsDir)) { // если папка еще не создана
         std::filesystem::create_directory(resultsDir); // то создаем ее
     }
+    vector<pair<Mat, Mat>> pyramid;
+    Mat img = original.clone();
+    const int PYRAMID_MIN_SIZE = 20; // до какой поры уменьшать картинку? давайте уменьшать пока картинка больше 20 пикселей
+    while (img.rows > PYRAMID_MIN_SIZE && img.rows > PYRAMID_MIN_SIZE) { // или пока больше (2 * размер окна для оценки качества)
+        pyramid.push_back({img.clone(), mask.clone()}); // мы могли бы воспользоваться push_back но мы хотим вставлять картинки в начало вектора
+        cv::pyrDown(img, img); // эта функция уменьшает картинку в два раза
+        cv::pyrDown(mask, mask); // эта функция уменьшает картинку в два раза
+    }
+    cv::Mat shiftslast;
+    reverse(pyramid.begin(), pyramid.end());
+    for(int layer = 0; layer<pyramid.size(); layer++){
 
-    // сохраняем в папку с результатами оригинальную картинку и маску
-    cv::imwrite(resultsDir + "0original.png", original);
-    cv::imwrite(resultsDir + "1mask.png", mask);
-
-    // TODO замените белым цветом все пиксели в оригинальной картинке которые покрыты маской
-    // TODO сохраните в папку с результатами то что получилось под названием "2_original_cleaned.png"
-    // TODO посчитайте и выведите число отмаскированных пикселей (числом и в процентах) - в таком формате:
-    int mskpxl = 0;
-    cv::Mat cleanOrig = original.clone();
-    for(int i = 0; i < original.cols; i++){
-        for(int j = 0; j < original.rows; j++){
-            if(isPixelMasked(mask,j,i)){
-                mskpxl++;
-                cv::Vec3b color = {255, 255, 255};
-                cleanOrig.at<cv::Vec3b>(j, i) = color;
+        img = pyramid[layer].first;
+        mask = pyramid[layer].second;
+        string nowdir = resultsDir+"/layer_"+ to_string(layer)+"/";
+        if (!std::filesystem::exists(nowdir)) { // если папка еще не создана
+            std::filesystem::create_directory(nowdir); // то создаем ее
+        }
+        // сохраняем в папку с результатами оригинальную картинку и маску
+        cv::imwrite(nowdir + "0original.png", img);
+        cv::imwrite(nowdir + "1mask.png", mask);
+        rassert(mask.cols==img.cols && mask.rows==img.rows, 1283912);
+        int cntmasked = 0;
+        for(int i = 0; i<mask.rows; i++){
+            for(int j = 0; j<mask.cols; j++){
+                if(isPixelMasked(mask, i, j)){
+                    img.at<Vec3b>(i, j) = Vec3b(0, 0, 0);
+                    cntmasked++;
+                }
             }
         }
+        cout << "Layer " << layer+1 << "/" << pyramid.size() << ": " "Number of masked pixels: " <<  cntmasked << "/" << mask.rows*mask.cols << " = " << cntmasked*100.0/mask.rows/mask.cols << "%\n";
+
+        cv::Mat shifts(img.rows, img.cols, CV_32SC2, cv::Scalar(0, 0)); // матрица хранящая смещения, изначально заполнена парами нулей
+        if(layer!=0){
+            for(int i = 0; i<mask.rows; i++){
+                for(int j = 0; j<mask.cols; j++){
+                    shifts.at<Vec2i>(i, j) = Vec2i(shiftslast.at<Vec2i>(i/2, j/2)[0]*2, shiftslast.at<Vec2i>(i/2, j/2)[1]*2);
+                }
+            }
+        }
+        const int NofTheories = 60;//кратно 5
+        const int iters = 500;////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////params!!!!!!!
+        const int kernel = 3;//окно (2*kernel+1 X 2*kernel+1)
+        const int emptyloss = 2500;
+        const int rectrust = 3;
+        for(int iter = 0; iter<iters; iter++) {
+            for (int i0 = 0; i0 < mask.rows; i0++) {
+                for (int j0 = 0; j0 < mask.cols; j0++) {
+
+                    int i = i0;
+                    int j = j0;
+                    if (iter % 2){
+                        i = mask.rows-1-i;
+                        j = mask.cols-1-j;
+                    }
+                    if(isPixelMasked(mask, i, j)) {
+                        vector<pair<int, int>> theories;
+                        if (i + 1 < mask.rows && isPixelMasked(mask, i+1, j)) {
+                            Vec2i vec = shifts.at<Vec2i>(i + 1, j);
+                            theories.push_back({i + 1 + vec[0], j + vec[1]});
+                            for (int v = 0; v < NofTheories / 5; v++) {
+                                theories.push_back(
+                                        {getNorm(mask.rows, i + 1 + vec[0]), getNorm(mask.cols, j + vec[1])});
+                            }
+                        }
+                        if (i - 1 >= 0 && isPixelMasked(mask, i-1, j)) {
+                            Vec2i vec = shifts.at<Vec2i>(i - 1, j);
+                            theories.push_back({i - 1 + vec[0], j + vec[1]});
+                            for (int v = 0; v < NofTheories / 5; v++) {
+                                theories.push_back(
+                                        {getNorm(mask.rows, i - 1 + vec[0]), getNorm(mask.cols, j + vec[1])});
+                            }
+                        }
+                        if (j - 1 >= 0 && isPixelMasked(mask, i, j-1)) {
+                            Vec2i vec = shifts.at<Vec2i>(i, j - 1);
+                            theories.push_back({i + vec[0], j - 1 + vec[1]});
+                            for (int v = 0; v < NofTheories / 5; v++) {
+                                theories.push_back(
+                                        {getNorm(mask.rows, i + vec[0]), getNorm(mask.cols, j - 1 + vec[1])});
+                            }
+                        }
+                        if (j + 1 < mask.cols && isPixelMasked(mask, i, j+1)) {
+                            Vec2i vec = shifts.at<Vec2i>(i, j + 1);
+                            theories.push_back({i + vec[0], j + 1 + vec[1]});
+                            for (int v = 0; v < NofTheories / 5; v++) {
+                                theories.push_back(
+                                        {getNorm(mask.rows, i + vec[0]), getNorm(mask.cols, j + 1 + vec[1])});
+                            }
+                        }
+                        if (true) {
+                            Vec2i vec = shifts.at<Vec2i>(i, j);
+                            theories.push_back({i + vec[0], j + vec[1]});
+                            for (int v = 0; v < NofTheories / 5; v++) {
+                                theories.push_back({getNorm(mask.rows, i + vec[0]), getNorm(mask.cols, j + vec[1])});
+                            }
+                        }
+
+                        int cur = 0;
+                        int x = i + shifts.at<Vec2i>(i, j)[0];
+                        int y = j + shifts.at<Vec2i>(i, j)[1];
+                        for (int di = -kernel; di <= kernel; di++) {
+                            for (int dj = -kernel; dj <= kernel; dj++) {
+                                if (i + di >= mask.rows || i + di < 0 || j + dj >= mask.cols || j + dj < 0)
+                                    continue;
+                                else if (x + di >= mask.rows || x + di < 0 || y + dj >= mask.cols || y + dj < 0)
+                                    cur += emptyloss;
+                                else if (isPixelMasked(mask, x + di, y + dj))
+                                    cur = INT_MAX/2;
+                                else if (isPixelMasked(mask, i + di, j + dj)) {
+                                    Vec2i recpos = shifts.at<Vec2i>(i + di, j + dj);//recursively looking at link
+                                    recpos[0] += i + di;
+                                    recpos[1] += j + dj;
+                                    if (isPixelMasked(mask, recpos[0], recpos[1]))
+                                        cur += emptyloss;
+                                    else {
+                                        Vec3b t1 = img.at<Vec3b>(recpos[0], recpos[1]);
+                                        Vec3b t2 = img.at<Vec3b>(x + di, y + dj);
+                                        cur += rectrust *
+                                               ((t1[0] - t2[0]) * (t1[0] - t2[0]) + (t1[1] - t2[1]) * (t1[1] - t2[1]) +
+                                                (t1[2] - t2[2]) * (t1[2] - t2[2]));
+                                    }
+                                } else {
+                                    Vec3b t1 = img.at<Vec3b>(i + di, j + dj);
+                                    Vec3b t2 = img.at<Vec3b>(x + di, y + dj);
+                                    cur += (t1[0] - t2[0]) * (t1[0] - t2[0]) + (t1[1] - t2[1]) * (t1[1] - t2[1]) +
+                                           (t1[2] - t2[2]) * (t1[2] - t2[2]);
+                                }
+                            }
+                        }
+                        Mat temp = img.clone();
+                        for (pair<int, int> now: theories) {
+
+                            int nw = 0;
+                            int x = now.first;
+                            int y = now.second;
+                            temp.at<Vec3b>(x, y) = Vec3b(0, 255, 0);
+                            for (int di = -kernel; di <= kernel; di++) {
+                                for (int dj = -kernel; dj <= kernel; dj++) {
+                                    if (i + di >= mask.rows || i + di < 0 || j + dj >= mask.cols || j + dj < 0)
+                                        continue;
+                                    else if (x + di >= mask.rows || x + di < 0 || y + dj >= mask.cols || y + dj < 0)
+                                        nw += emptyloss;
+                                    else if (isPixelMasked(mask, x + di, y + dj))
+                                        nw = INT_MAX/2;
+                                    else if (isPixelMasked(mask, i + di, j + dj)) {
+                                        Vec2i recpos = shifts.at<Vec2i>(i + di, j + dj);//recursively looking at link
+                                        recpos[0] += i + di;
+                                        recpos[1] += j + dj;
+                                        if (isPixelMasked(mask, recpos[0], recpos[1]))
+                                            nw += emptyloss;
+                                        else {
+                                            Vec3b t1 = img.at<Vec3b>(recpos[0], recpos[1]);
+                                            Vec3b t2 = img.at<Vec3b>(x + di, y + dj);
+                                            nw += rectrust * ((t1[0] - t2[0]) * (t1[0] - t2[0]) +
+                                                              (t1[1] - t2[1]) * (t1[1] - t2[1]) +
+                                                              (t1[2] - t2[2]) * (t1[2] - t2[2]));
+                                        }
+                                    } else {
+                                        Vec3b t1 = img.at<Vec3b>(i + di, j + dj);
+                                        Vec3b t2 = img.at<Vec3b>(x + di, y + dj);
+                                        nw += (t1[0] - t2[0]) * (t1[0] - t2[0]) + (t1[1] - t2[1]) * (t1[1] - t2[1]) +
+                                              (t1[2] - t2[2]) * (t1[2] - t2[2]);
+                                    }
+                                }
+                            }
+                            if (nw < cur) {
+                                shifts.at<Vec2i>(i, j) = Vec2i(x - i, y - j);
+                                cur = nw;
+                            }
+                        }
+//                        if(layer==0){
+//                            string newdir = nowdir+"/"+ to_string(i)+"_"+to_string(j)+"/";
+//                            if (!std::filesystem::exists(newdir)) { // если папка еще не создана
+//                                std::filesystem::create_directory(newdir); // то создаем ее
+//                            }
+//                            cv::imwrite(newdir + "aaa.png", temp);
+//                        }
+                    }
+                }
+            }
+        }
+        shiftslast = shifts.clone();
+        Mat res = img.clone();
+        for (int i = 0; i < mask.rows; i++) {
+            for (int j = 0; j < mask.cols; j++) {
+                if(isPixelMasked(mask, i, j)){
+                    res.at<Vec3b>(i, j) = img.at<Vec3b>(i+shifts.at<Vec2i>(i, j)[0], j+shifts.at<Vec2i>(i, j)[1]);
+                }
+            }
+        }
+        cv::imwrite(nowdir + "2res.png", res);
     }
-    cv::imwrite(resultsDir + "2_original_cleaned.png", cleanOrig);
 
-
-    std::cout << "Number of masked pixels: " << mskpxl << "/" << original.rows * original.cols << " = " << ((mskpxl*1.0)/(original.rows * original.cols*1.0))*100 << "%";
-
-    FastRandom random(32542341); // этот объект поможет вам генерировать случайные гипотезы
-
-    // TODO 10 создайте картинку хранящую относительные смещения - откуда брать донора для заплатки, см. подсказки про то как с нею работать на сайте
-    // TODO 11 во всех отмаскированных пикселях: заполните эту картинку с относительными смещениями - случайными смещениями (но чтобы они и их окрестность 5х5 не выходила за пределы картинки)
-    // TODO 12 во всех отмаскированных пикселях: замените цвет пиксела А на цвет пикселя Б на который указывает относительное смещение пикселя А
-    // TODO 13 сохраните получившуюся картинку на диск
-    // TODO 14 выполняйте эти шаги 11-13 много раз, например 1000 раз (оберните просто в цикл, сохраняйте картинку на диск только на каждой десятой или сотой итерации)
-    // TODO 15 теперь давайте заменять значение относительного смещения на новой только если новая случайная гипотеза - лучше старой, добавьте оценку "насколько смещенный патч 5х5 похож на патч вокруг пикселя если их наложить"
-    //
-    // Ориентировочный псевдокод-подсказка получившегося алгоритма:
-     cv::Mat shifts; // матрица хранящая смещения, изначально заполнена парами нулей
-     cv::Mat image = original; // текущая картинка
-     for (int l = 0; l < 1000; l++) {
-         for(int i = 0; i < original.cols; i++){
-             for(int j = 0; j < original.rows; j++){
-                 if (!isPixelMasked(mask,j,i));
-                     continue; // пропускаем т.к. его менять не надо
-                 cv::Vec2i dxy = shifts.at<cv::Vec2i>(j, i);             // смотрим какое сейчас смещение для этого пикселя в матрице смещения
-                 int nx = i + dxy[0];
-                 int ny = j + dxy[1];
-                 unsigned char currentQuality = estimateQuality(image, j, i, ny, nx); // эта функция (создайте ее) считает насколько похож квадрат 5х5 приложенный центром к (i, j)
-                 //на квадрат 5х5 приложенный центром к (nx, ny)
-                 int rx = rand() % image.cols;
-                 int ry = rand() % image.rows;
-
-                        // (окрестность вокруг пикселя на который укажет смещение - не должна выходить за пределы картинки и не должна быть отмаскирована)
-                         unsigned char randomQuality = estimateQuality(image, j, i, j+ry, i+rx); // оцениваем насколько похоже будет если мы приложим эту случайную гипотезу которую только что выбрали
-
-                         if (randomQuality > currentQuality) {
-                             shifts.at<cv::Vec2i>(j, i) = cv::Vec2i(rx, ry);
-                             //то сохраняем (rx,ry) в картинку смещений
-                             //и в текущем пикселе кладем цвет из пикселя на которого только что смотрели (цент окрестности по смещению)
-                             //(т.е. мы не весь патч сюда кладем, а только его центральный пиксель)
-                         } //else {
-                            // а что делать если новая случайная гипотеза хуже чем то что у нас уже есть?
-                         //}
-             }
-
-         }
-        // не забываем сохранить на диск текущую картинку
-         //а как численно оценить насколько уже хорошую картинку мы смогли построить? выведите в консоль это число
-     }
 }
 
 
 int main() {
     try {
-        run(1, "mic");
-        // TODO протестируйте остальные случаи:
-//        run(2, "flowers");
-//        run(3, "baloons");
-//        run(4, "brickwall");
-//        run(5, "old_photo");
-//        run(6, "your_data"); // TODO придумайте свой случай для тестирования (рекомендуется не очень большое разрешение, например 300х300)
+        //run(1, "mic");
+        run(2, "flowers");
+        //run(3, "baloons");
+        //run(4, "brickwall");
+        //run(5, "old_photo");
+        //run(6, "your_data");
 
         return 0;
     } catch (const std::exception &e) {

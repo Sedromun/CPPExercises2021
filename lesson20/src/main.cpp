@@ -23,13 +23,13 @@
 void run(std::string caseName) {
     std::cout << "__________________Case " << caseName << "__________________" << std::endl;
 
-    cv::Mat original = cv::imread("lesson20/data/" + caseName + ".jpg");
+    cv::Mat original = cv::imread("C:\\Users\\vanar\\CLionProjects\\CPPExercises2021\\lesson20\\data\\" + caseName + ".jpg");
     rassert(!original.empty(), 324789374290018);
 
     std::cout << "Image resolution: " << original.cols << "x" << original.rows << std::endl;
 
     // создаем папку в которую будем сохранять результаты - lesson20/resultsData/ИМЯ_НАБОРА/
-    std::string resultsDir = "lesson20/resultsData/";
+    std::string resultsDir = "C:\\Users\\vanar\\CLionProjects\\CPPExercises2021\\lesson20\\resultsData\\";
     if (!std::filesystem::exists(resultsDir)) { // если папка еще не создана
         std::filesystem::create_directory(resultsDir); // то создаем ее
     }
@@ -169,11 +169,24 @@ void run(std::string caseName) {
             continue;
         GradientsCluster clusterA = clusters[clusterIndexA];
         GradientsCluster clusterB = clusters[clusterIndexB];
-        /* TODO реализуйте здесь объединение двух кластеров - посмотрите, может у класса GradientsCluster есть подходящий для этого метод? */
-
-        /* TODO реализуйте здесь формулы проверяющие можно ли объединить эти два кластера, т.е. можно ли использовать этот объединенный кластер */
-        bool directionOk = true;
-        bool magnitudeOk = true;
+        int aD = std::abs(clusterA.toD - clusterA.fromD);
+        int aM = std::abs(clusterA.toM - clusterA.fromM);
+        int aNum = clusterA.nPoints;
+        int bD = std::abs(clusterB.toD - clusterB.fromD);
+        int bM = std::abs(clusterB.toM - clusterB.fromM);
+        int bNum = clusterB.nPoints;
+        /*  реализуйте здесь объединение двух кластеров - посмотрите, может у класса GradientsCluster есть подходящий для этого метод? */
+        clusterA.plus(clusterB);
+        /*  реализуйте здесь формулы проверяющие можно ли объединить эти два кластера, т.е. можно ли использовать этот объединенный кластер */
+        bool directionOk = false;
+        bool magnitudeOk = false;
+        int d = std::abs(clusterA.toD - clusterA.fromD);
+        int m = std::abs(clusterA.toM - clusterA.fromM);
+        int num = clusterA.nPoints;
+        if(d <= std::min(aD, bD) + 100.0/num)
+            directionOk = true;
+        if(m <= std::min(aM, bM) + 1200.0/num)
+            directionOk = true;
         if (directionOk && magnitudeOk) {
             int unionIndex = disjoint_set.union_sets(clusterIndexA, clusterIndexB);
             rassert(unionIndex == clusterIndexA || unionIndex == clusterIndexB, 3847239700149);
@@ -223,7 +236,10 @@ void run(std::string caseName) {
             if (clusters[clusterIndex].fromM == DISABLED_PIXELS_MAGNITUDE && clusters[clusterIndex].toM == DISABLED_PIXELS_MAGNITUDE) {
                 clusters_colors[clusterIndex] = cv::Vec3b(0, 0, 0); // если этот кластер состоит только из выключенных пикселей - пусть будет черным
             } else {
-                /* TODO визуализируйте все компоненты связности, если этот clusterIndex мы видим впервые - назначьте ему случайный цвет */
+                /* визуализируйте все компоненты связности, если этот clusterIndex мы видим впервые - назначьте ему случайный цвет */
+                clusters_colors[clusterIndex] = cv::Vec3b(randomColorsGenerator.next(0, 255),
+                                                          randomColorsGenerator.next(0, 255),
+                                                          randomColorsGenerator.next(0, 255));
             }
             rassert(clusters_pixels.count(clusterIndex) == 0, 23847293473200227); // проверяем что раз цвет кластеру неназначен, то и пикселей у этого кластера пока не добавлено
             clusters_pixels[clusterIndex] = std::vector<cv::Point2i>();
@@ -332,7 +348,7 @@ int main() {
         int nthreads = omp_thread_count();
         std::cout << "CPU on this computer has " << nthreads << " virtual threads" << std::endl;
 
-        run("00");
+        //run("00");
         run("01");
         run("02");
         run("03");
